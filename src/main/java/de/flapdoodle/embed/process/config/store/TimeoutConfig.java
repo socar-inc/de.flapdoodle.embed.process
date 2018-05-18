@@ -39,11 +39,12 @@ public interface TimeoutConfig {
 		return 10000;
 	}
 
-	public static ImmutableTimeoutConfig defaults() {
-		return ImmutableTimeoutConfig.builder().build();
+	static ImmutableTimeoutConfig defaults() {
+		return ImmutableTimeoutConfig.builder()
+				.build();
 	}
 	
-	public static ImmutableTimeoutConfig.Builder builder() {
+	static ImmutableTimeoutConfig.Builder builder() {
 		return ImmutableTimeoutConfig.builder();
 	}
 }

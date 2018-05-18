@@ -29,13 +29,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Optional;
 
 import de.flapdoodle.embed.process.config.store.DownloadConfig;
+import de.flapdoodle.embed.process.config.store.ProxyFactory;
 import de.flapdoodle.embed.process.config.store.TimeoutConfig;
 import de.flapdoodle.embed.process.distribution.Distribution;
 import de.flapdoodle.embed.process.io.directories.PropertyOrPlatformTempDir;
@@ -111,16 +111,12 @@ public class Downloader implements IDownloader {
 	}
 
 	private InputStreamAndLength downloadInputStream(DownloadConfig downloadConfig, Distribution distribution)
-			throws MalformedURLException, IOException {
-		
-		String userAgent = downloadConfig.getUserAgent();
-		TimeoutConfig timeoutConfig = downloadConfig.getTimeoutConfig();
-		
+			throws IOException {
 		URL url = new URL(getDownloadUrl(downloadConfig, distribution));
 		
-		Optional<Proxy> proxy = downloadConfig.proxyFactory().map(f -> f.createProxy());
+		Optional<Proxy> proxy = downloadConfig.proxyFactory().map(ProxyFactory::createProxy);
 		
-		return download(url, proxy, timeoutConfig, userAgent);
+		return download(url, proxy, downloadConfig.getTimeoutConfig(), downloadConfig.getUserAgent());
 	}
 
 	private static InputStreamAndLength download(URL url, Optional<Proxy> proxy, TimeoutConfig timeoutConfig, String userAgent) throws IOException {
@@ -141,7 +137,7 @@ public class Downloader implements IDownloader {
 	
 			return new InputStreamAndLength(downloadStream,openConnection.getContentLength());
 		} catch (IOException iox) {
-			throw new IOException("Could not open inputStream for "+url+(proxy!=null ? " with proxy "+proxy : ""), iox);
+			throw new IOException("Could not open inputStream for " + url + " with proxy " + proxy, iox);
 		}
 	}
 

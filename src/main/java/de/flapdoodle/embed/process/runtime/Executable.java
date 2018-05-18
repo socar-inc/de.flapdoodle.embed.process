@@ -36,7 +36,7 @@ import de.flapdoodle.embed.process.extract.ExtractedFileSet;
 
 public abstract class Executable<T extends IExecutableProcessConfig, P extends IStopable> implements IStopable {
 
-	private static Logger logger = LoggerFactory.getLogger(Executable.class);
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	private final T config;
 	private final RuntimeConfig runtimeConfig;
@@ -44,7 +44,7 @@ public abstract class Executable<T extends IExecutableProcessConfig, P extends I
 	private boolean stopped;
 	private boolean registeredJobKiller;
 	
-	List<IStopable> stopables = new ArrayList<IStopable>();
+	List<IStopable> stopables = new ArrayList<>();
 
 	private final Distribution distribution;
 

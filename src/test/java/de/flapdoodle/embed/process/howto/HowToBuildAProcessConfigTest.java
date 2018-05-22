@@ -33,7 +33,6 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Optional;
 
@@ -49,19 +48,47 @@ import de.flapdoodle.embed.process.distribution.Distribution;
 import de.flapdoodle.embed.process.distribution.Version;
 import de.flapdoodle.embed.process.io.net.UrlStreams;
 import de.flapdoodle.embed.process.io.net.UrlStreams.DownloadCopyListener;
+import de.flapdoodle.embed.process.parts.ArtifactUrl;
+import de.flapdoodle.embed.process.parts.LocalArtifactPath;
+import de.flapdoodle.embed.process.parts.ProcessFactory;
 import de.flapdoodle.embed.process.types.DownloadPath;
 import de.flapdoodle.transition.NamedType;
 import de.flapdoodle.transition.initlike.InitLike;
 import de.flapdoodle.transition.initlike.InitLike.Init;
 import de.flapdoodle.transition.initlike.InitRoutes;
 import de.flapdoodle.transition.initlike.State;
-import de.flapdoodle.transition.routes.Bridge;
-import de.flapdoodle.transition.routes.MergingJunction;
 import de.flapdoodle.transition.routes.SingleDestination;
-import de.flapdoodle.transition.routes.Start;
 import de.flapdoodle.types.Try;
 
 public class HowToBuildAProcessConfigTest {
+
+	@Test
+	public void readableSample() {
+		ProcessFactory processFactory = ProcessFactory.builder()
+				.version(Version.of("2.1.1"))
+				.baseDownloadUrl("https://bitbucket.org/ariya/phantomjs/downloads/")
+				.archiveTypeForDistribution(HowToBuildAProcessConfigTest::getArchiveType)
+				.fileSetOfDistribution(HowToBuildAProcessConfigTest::fileSetFor)
+				.urlOfDistributionAndArchiveType(
+						(baseUrl, dist, archiveType) -> ArtifactUrl.of(baseUrl.value() + getPath(dist, archiveType)))
+				.localArtifactPathOfDistributionAndArchiveType(
+						(dist, archiveType) -> LocalArtifactPath.of(getPath(dist, archiveType)))
+				.build();
+
+		if (false) {
+			String dotFile = processFactory.setupAsDot("processBuild_sample");
+			System.out.println("---------------------------");
+			System.out.println(dotFile);
+			System.out.println("---------------------------");
+		}
+
+		InitLike initLike = processFactory.initLike();
+
+		try (Init<ArtifactUrl> init = initLike.init(NamedType.typeOf(ArtifactUrl.class))) {
+			System.out.println("download from " + init.current());
+
+		}
+	}
 
 	@Test
 	@Ignore("it is an integration test")
@@ -69,24 +96,18 @@ public class HowToBuildAProcessConfigTest {
 		NamedType<Path> artifactStore = typeOf("artifactStore", Path.class);
 		NamedType<Path> artifactPath = typeOf("artifactPath", Path.class);
 		NamedType<Path> downloadedArtifactPath = typeOf("downloadedArtifactPath", Path.class);
+		NamedType<DistributionPackage> distPackage = typeOf(DistributionPackage.class);
 
-		InitRoutes<SingleDestination<?>> routes = InitRoutes.builder()
-				.add(Start.of(typeOf(Version.class)), () -> State.of(Version.of("2.1.1")))
-				.add(Start.of(artifactStore), () -> artifactStore())
-				.add(Start.of(typeOf(DownloadPath.class)),
-						() -> State.of(DownloadPath.of("https://bitbucket.org/ariya/phantomjs/downloads/")))
-				.add(Bridge.of(typeOf(Version.class), typeOf(Distribution.class)),
-						(version) -> State.of(Distribution.detectFor(version)))
-				.add(Bridge.of(typeOf(Distribution.class), typeOf(DistributionPackage.class)),
-						(distribution) -> packageOf(distribution))
-				.add(MergingJunction.of(typeOf(DownloadPath.class), typeOf(DistributionPackage.class), typeOf(URL.class)),
-						(downloadPath, dist) -> {
-							return downloadUrl(downloadPath, dist);
-						})
-				.add(MergingJunction.of(artifactStore, typeOf(DistributionPackage.class), artifactPath),
-						(store, dist) -> artifactPath(store, dist))
-				.add(MergingJunction.of(artifactPath, typeOf(URL.class), downloadedArtifactPath),
-						(path, url) -> useOrDownloadArtifact(path, url))
+		NamedType<URL> url = typeOf(URL.class);
+		InitRoutes<SingleDestination<?>> routes = InitRoutes.fluentBuilder()
+				.start(Version.class).withValue(Version.of("2.1.1"))
+				.start(artifactStore).with(() -> artifactStore())
+				.start(DownloadPath.class).withValue(DownloadPath.of("https://bitbucket.org/ariya/phantomjs/downloads/"))
+				.bridge(Version.class, Distribution.class).withMapping(Distribution::detectFor)
+				.bridge(Distribution.class, DistributionPackage.class).with(HowToBuildAProcessConfigTest::packageOf)
+				.merge(typeOf(DownloadPath.class), distPackage, url).with(HowToBuildAProcessConfigTest::downloadUrl)
+				.merge(artifactStore, distPackage, artifactPath).with(HowToBuildAProcessConfigTest::artifactPath)
+				.merge(artifactPath, url, downloadedArtifactPath).with(HowToBuildAProcessConfigTest::useOrDownloadArtifact)
 				.build();
 
 		try (Init<Path> initArtifactStore = InitLike.with(routes).init(artifactStore)) {
@@ -186,10 +207,6 @@ public class HowToBuildAProcessConfigTest {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-	}
-
-	private static State<Path> downloadedArtifact() {
-		return State.of(Paths.get(""));
 	}
 
 	private static State<URL> downloadUrl(DownloadPath path, DistributionPackage dist) {

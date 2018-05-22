@@ -48,7 +48,9 @@ import de.flapdoodle.embed.process.distribution.Distribution;
 import de.flapdoodle.embed.process.distribution.Version;
 import de.flapdoodle.embed.process.io.net.UrlStreams;
 import de.flapdoodle.embed.process.io.net.UrlStreams.DownloadCopyListener;
+import de.flapdoodle.embed.process.parts.ArtifactPath;
 import de.flapdoodle.embed.process.parts.ArtifactUrl;
+import de.flapdoodle.embed.process.parts.CachingArtifactDownloader;
 import de.flapdoodle.embed.process.parts.LocalArtifactPath;
 import de.flapdoodle.embed.process.parts.ProcessFactory;
 import de.flapdoodle.embed.process.types.DownloadPath;
@@ -64,29 +66,37 @@ public class HowToBuildAProcessConfigTest {
 
 	@Test
 	public void readableSample() {
-		ProcessFactory processFactory = ProcessFactory.builder()
-				.version(Version.of("2.1.1"))
-				.baseDownloadUrl("https://bitbucket.org/ariya/phantomjs/downloads/")
-				.archiveTypeForDistribution(HowToBuildAProcessConfigTest::getArchiveType)
-				.fileSetOfDistribution(HowToBuildAProcessConfigTest::fileSetFor)
-				.urlOfDistributionAndArchiveType(
-						(baseUrl, dist, archiveType) -> ArtifactUrl.of(baseUrl.value() + getPath(dist, archiveType)))
-				.localArtifactPathOfDistributionAndArchiveType(
-						(dist, archiveType) -> LocalArtifactPath.of(getPath(dist, archiveType)))
-				.build();
 
-		if (false) {
-			String dotFile = processFactory.setupAsDot("processBuild_sample");
-			System.out.println("---------------------------");
-			System.out.println(dotFile);
-			System.out.println("---------------------------");
-		}
+		try (Init<Path> tempArtifactStorePath = InitLike.with(InitRoutes.fluentBuilder()
+				.start(Path.class).with(() -> artifactStore())
+				.build()).init(typeOf(Path.class))) {
 
-		InitLike initLike = processFactory.initLike();
+			ProcessFactory processFactory = ProcessFactory.builder()
+					.version(Version.of("2.1.1"))
+					.baseDownloadUrl("https://bitbucket.org/ariya/phantomjs/downloads/")
+					.artifactsBasePath(tempArtifactStorePath.current())
+					.archiveTypeForDistribution(HowToBuildAProcessConfigTest::getArchiveType)
+					.fileSetOfDistribution(HowToBuildAProcessConfigTest::fileSetFor)
+					.urlOfDistributionAndArchiveType(
+							(baseUrl, dist, archiveType) -> ArtifactUrl.of(baseUrl.value() + getPath(dist, archiveType)))
+					.localArtifactPathOfDistributionAndArchiveType(
+							(dist, archiveType) -> LocalArtifactPath.of(getPath(dist, archiveType)))
+					.artifactPathForUrl(new CachingArtifactDownloader(listener()))
+					.build();
 
-		try (Init<ArtifactUrl> init = initLike.init(NamedType.typeOf(ArtifactUrl.class))) {
-			System.out.println("download from " + init.current());
+			if (false) {
+				String dotFile = processFactory.setupAsDot("processBuild_sample");
+				System.out.println("---------------------------");
+				System.out.println(dotFile);
+				System.out.println("---------------------------");
+			}
 
+			InitLike initLike = processFactory.initLike();
+
+			try (Init<ArtifactPath> init = initLike.init(NamedType.typeOf(ArtifactPath.class))) {
+				System.out.println("downloaded: " + init.current());
+
+			}
 		}
 	}
 

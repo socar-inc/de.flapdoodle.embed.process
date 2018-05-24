@@ -1,6 +1,5 @@
 package de.flapdoodle.embed.process.parts;
 
-import static de.flapdoodle.transition.NamedType.typeOf;
 
 import java.nio.file.Path;
 
@@ -37,21 +36,20 @@ public abstract class ProcessFactory {
 
 	@Auxiliary
 	protected InitRoutes<SingleDestination<?>> routes() {
-		return InitRoutes.fluentBuilder()
-				.start(Version.class).withValue(version())
-				.start(BaseUrl.class).withValue(BaseUrl.of(baseDownloadUrl()))
-				.start(ArtifactsBasePath.class).withValue(ArtifactsBasePath.of(artifactsBasePath()))
-				.bridge(Version.class, Distribution.class).withMapping(Distribution::detectFor)
-				.bridge(Distribution.class, ArchiveType.class).withMapping(archiveTypeForDistribution())
-				.bridge(Distribution.class, FileSet.class).withMapping(fileSetOfDistribution())
-				.merge3(typeOf(BaseUrl.class), typeOf(Distribution.class), typeOf(ArchiveType.class), typeOf(ArtifactUrl.class))
-				.with((baseUrl, distribution, archiveType) -> State
+		return InitRoutes.builder()
+				.state(Version.class).isInitializedWith(version())
+				.state(BaseUrl.class).isInitializedWith(BaseUrl.of(baseDownloadUrl()))
+				.state(ArtifactsBasePath.class).isInitializedWith(ArtifactsBasePath.of(artifactsBasePath()))
+				.given(Version.class).state(Distribution.class).isDerivedBy(Distribution::detectFor)
+				.given(Distribution.class).state(ArchiveType.class).isDerivedBy(archiveTypeForDistribution())
+				.given(Distribution.class).state(FileSet.class).isDerivedBy(fileSetOfDistribution())
+				.given(BaseUrl.class, Distribution.class, ArchiveType.class).state(ArtifactUrl.class)
+				.isReachedBy((baseUrl, distribution, archiveType) -> State
 						.of(urlOfDistributionAndArchiveType().apply(baseUrl, distribution, archiveType)))
-				.merge(typeOf(Distribution.class), typeOf(ArchiveType.class), typeOf(LocalArtifactPath.class))
-				.withMapping(localArtifactPathOfDistributionAndArchiveType())
-				.merge3(typeOf(ArtifactsBasePath.class), typeOf(ArtifactUrl.class), typeOf(LocalArtifactPath.class),
-						typeOf(ArtifactPath.class))
-				.with((base, url, localPath) -> State.of(artifactPathForUrl().apply(base, url, localPath)))
+				.given(Distribution.class, ArchiveType.class).state(LocalArtifactPath.class)
+				.isDerivedBy(localArtifactPathOfDistributionAndArchiveType())
+				.given(ArtifactsBasePath.class, ArtifactUrl.class, LocalArtifactPath.class).state(ArtifactPath.class)
+				.isReachedBy((base, url, localPath) -> State.of(artifactPathForUrl().apply(base, url, localPath)))
 				.build();
 	}
 

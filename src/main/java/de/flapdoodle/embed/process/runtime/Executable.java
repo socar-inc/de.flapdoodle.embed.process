@@ -81,7 +81,7 @@ public abstract class Executable<T extends IExecutableProcessConfig, P extends I
 			}
 			stopables = new ArrayList<>();
 
-			runtimeConfig.getArtifactStore().removeFileSet(distribution, executable);
+			runtimeConfig.artifactStore().removeFileSet(distribution, executable);
 
 			stopped = true;
 		}

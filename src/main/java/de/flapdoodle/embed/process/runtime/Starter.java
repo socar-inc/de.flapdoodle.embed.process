@@ -53,7 +53,7 @@ public abstract class Starter<CONFIG extends IExecutableProcessConfig,EXECUTABLE
 
 	public EXECUTABLE prepare(CONFIG config, Distribution distribution) {
 		try {
-			IArtifactStore artifactStore = runtime.getArtifactStore();
+			IArtifactStore artifactStore = runtime.artifactStore();
 			
 			Optional<ExtractedFileSet> files = artifactStore.extractFileSet(distribution);
 			if (files.isPresent()) {

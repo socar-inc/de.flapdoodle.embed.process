@@ -40,7 +40,7 @@ import de.flapdoodle.embed.process.io.directories.PropertyOrPlatformTempDir;
 import de.flapdoodle.embed.process.io.file.Files;
 
 
-public class StaticArtifactStoreBuilderTest {
+public class StaticArtifactStoreTest {
 
 	@Test
 	public void returnStaticFileSetForDistribution() throws IOException {
@@ -54,8 +54,8 @@ public class StaticArtifactStoreBuilderTest {
 				.addLibraryFiles(new File("foo.lib"))
 				.build();
 		
-		IArtifactStore store = new StaticArtifactStoreBuilder()
-			.fileSet(distribution, fileSet)
+		IArtifactStore store = StaticArtifactStore.builder()
+			.putFileSet(distribution, fileSet)
 			.build();
 		
 		Optional<ExtractedFileSet> optExtractFileSet = store.extractFileSet(distribution);

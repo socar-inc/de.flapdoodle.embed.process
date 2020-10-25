@@ -40,6 +40,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import de.flapdoodle.embed.process.TempDir;
+import de.flapdoodle.embed.process.config.store.DistributionDownloadPath;
 import de.flapdoodle.embed.process.config.store.DistributionPackage;
 import de.flapdoodle.embed.process.config.store.DownloadConfig;
 import de.flapdoodle.embed.process.config.store.DownloadConfigBuilder;
@@ -49,6 +50,7 @@ import de.flapdoodle.embed.process.config.store.PackageResolver;
 import de.flapdoodle.embed.process.distribution.ArchiveType;
 import de.flapdoodle.embed.process.distribution.Distribution;
 import de.flapdoodle.embed.process.distribution.Version;
+import de.flapdoodle.embed.process.extract.DirectoryAndExecutableNaming;
 import de.flapdoodle.embed.process.extract.ExtractedFileSet;
 import de.flapdoodle.embed.process.extract.NoopTempNaming;
 import de.flapdoodle.embed.process.extract.UUIDTempNaming;
@@ -73,13 +75,17 @@ public class ExtractedArtifactStoreTest {
 		Path copiedFile = Files.copy(source.toPath(), artifactDir.asFile().toPath().resolve(artefactName(distribution)), StandardCopyOption.REPLACE_EXISTING);
 		assertNotNull(copiedFile);
 		
-		IArtifactStore store = new ExtractedArtifactStoreBuilder()
-			.download(downloadConfig(artifactDir))
-			.executableNaming(new UUIDTempNaming())
-			.tempDir(new TempDirInPlatformTempDir())
-			.downloader(failingDownloader())
-			.extractDir(extractedArtifactDir)
-			.extractExecutableNaming(new UUIDTempNaming())
+		ImmutableExtractedArtifactStore store = ExtractedArtifactStore.builder()
+				.downloader(failingDownloader())
+			.downloadConfig(downloadConfig(artifactDir))
+			.extraction(DirectoryAndExecutableNaming.builder()
+					.directory(extractedArtifactDir)
+					.executableNaming(new UUIDTempNaming())
+					.build())
+			.temp(DirectoryAndExecutableNaming.builder()
+					.directory(new TempDirInPlatformTempDir())
+					.executableNaming(new UUIDTempNaming())
+					.build())
 			.build();
 		
 		// extract files if not exists
@@ -133,9 +139,9 @@ public class ExtractedArtifactStoreTest {
 	}
 
 	private DownloadConfig downloadConfig(Directory artifactDir) {
-		return new DownloadConfigBuilder()
+		return DownloadConfig.builder()
 			.downloadPrefix("prefix")
-			.downloadPath("foo")
+			.downloadPath(__ -> "foo")
 			.packageResolver(packageResolver())
 			.artifactStorePath(artifactDir)
 			.fileNaming(new UUIDTempNaming())

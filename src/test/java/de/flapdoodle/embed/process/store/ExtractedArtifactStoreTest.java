@@ -40,10 +40,8 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import de.flapdoodle.embed.process.TempDir;
-import de.flapdoodle.embed.process.config.store.DistributionDownloadPath;
 import de.flapdoodle.embed.process.config.store.DistributionPackage;
 import de.flapdoodle.embed.process.config.store.DownloadConfig;
-import de.flapdoodle.embed.process.config.store.DownloadConfigBuilder;
 import de.flapdoodle.embed.process.config.store.FileSet;
 import de.flapdoodle.embed.process.config.store.FileType;
 import de.flapdoodle.embed.process.config.store.PackageResolver;
@@ -52,7 +50,6 @@ import de.flapdoodle.embed.process.distribution.Distribution;
 import de.flapdoodle.embed.process.distribution.Version;
 import de.flapdoodle.embed.process.extract.DirectoryAndExecutableNaming;
 import de.flapdoodle.embed.process.extract.ExtractedFileSet;
-import de.flapdoodle.embed.process.extract.NoopTempNaming;
 import de.flapdoodle.embed.process.extract.UUIDTempNaming;
 import de.flapdoodle.embed.process.io.directories.Directory;
 import de.flapdoodle.embed.process.io.directories.TempDirInPlatformTempDir;

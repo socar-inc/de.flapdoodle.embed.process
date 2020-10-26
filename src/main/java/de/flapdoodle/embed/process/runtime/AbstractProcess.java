@@ -23,7 +23,7 @@
  */
 package de.flapdoodle.embed.process.runtime;
 
-import de.flapdoodle.embed.process.config.IExecutableProcessConfig;
+import de.flapdoodle.embed.process.config.ExecutableProcessConfig;
 import de.flapdoodle.embed.process.config.RuntimeConfig;
 import de.flapdoodle.embed.process.config.io.ProcessOutput;
 import de.flapdoodle.embed.process.distribution.Distribution;
@@ -41,7 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class AbstractProcess<T extends IExecutableProcessConfig, E extends Executable<T, P>, P extends IStopable>
+public abstract class AbstractProcess<T extends ExecutableProcessConfig, E extends Executable<T, P>, P extends IStopable>
 		implements IStopable {
 
 	private static final Logger logger = LoggerFactory.getLogger(AbstractProcess.class);
@@ -190,8 +190,9 @@ public abstract class AbstractProcess<T extends IExecutableProcessConfig, E exte
 	}
 
 	protected final void stopProcess() {
-		if (process != null)
-			process.stop();
+		if (process != null) { 
+			config.stopTimeoutInMillis().ifPresentOrElse(process::stop, process::stop);
+		}
 	}
 
 	public int waitFor() throws InterruptedException {

@@ -29,12 +29,12 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.flapdoodle.embed.process.config.IExecutableProcessConfig;
+import de.flapdoodle.embed.process.config.ExecutableProcessConfig;
 import de.flapdoodle.embed.process.config.RuntimeConfig;
 import de.flapdoodle.embed.process.distribution.Distribution;
 import de.flapdoodle.embed.process.extract.ExtractedFileSet;
 
-public abstract class Executable<T extends IExecutableProcessConfig, P extends IStopable> implements IStopable {
+public abstract class Executable<T extends ExecutableProcessConfig, P extends IStopable> implements IStopable {
 
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
